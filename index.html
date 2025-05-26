@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel VLOOKUP Magic ✨</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .background-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.05;
+            background-image: 
+                radial-gradient(circle at 25% 25%, #e94560 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, #e94560 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(1deg); }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #e94560;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 4px 8px rgba(233,69,96,0.3);
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+
+        .main-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 
+                0 20px 60px rgba(0,0,0,0.15),
+                0 8px 25px rgba(0,0,0,0.1);
+            border: 1px solid #e1e5e9;
+            animation: slideUp 0.8s ease-out 0.2s both;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-display {
+            background: #e94560;
+            color: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 600;
+            box-shadow: 0 8px 25px rgba(233,69,96,0.25);
+            animation: pulse 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.02); }
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 1.1rem;
+        }
+
+        .file-upload-area {
+            border: 3px dashed #d1d5db;
+            border-radius: 16px;
+            padding: 2.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload-area:hover {
+            border-color: #e94560;
+            background: #fef2f2;
+            transform: translateY(-2px);
+        }
+
+        .file-upload-area.dragover {
+            border-color: #e94560;
+            background: #fef2f2;
+            transform: scale(1.02);
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            background: #e94560;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .sheet-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .sheet-option {
+            padding: 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sheet-option:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(233,69,96,0.1);
+            transition: left 0.5s;
+        }
+
+        .sheet-option:hover:before {
+            left: 100%;
+        }
+
+        .sheet-option:hover {
+            border-color: #e94560;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(233,69,96,0.15);
+        }
+
+        .sheet-option.selected {
+            border-color: #e94560;
+            background: #e94560;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(233,69,96,0.25);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #e94560;
+            box-shadow: 0 0 0 3px rgba(233,69,96,0.15);
+            transform: translateY(-1px);
+        }
+
+        .process-btn {
+            width: 100%;
+            padding: 1.5rem;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(233,69,96,0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .process-btn:hover {
+            background: #d63384;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(233,69,96,0.35);
+        }
+
+        .process-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .process-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result-area {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: #f0f9ff;
+            border-radius: 16px;
+            border-left: 5px solid #0ea5e9;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: #0ea5e9;
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(14,165,233,0.25);
+        }
+
+        .download-btn:hover {
+            background: #0284c7;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(14,165,233,0.35);
+            text-decoration: none;
+            color: white;
+        }
+
+        .file-info {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border-left: 4px solid #e94560;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .header h1 { font-size: 2rem; }
+            .sheet-selector { grid-template-columns: 1fr; }
+            .main-card { padding: 1.5rem; }
+        }
+
+        .sparkle {
+            position: absolute;
+            color: #ffd700;
+            font-size: 1rem;
+            animation: sparkle 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+            50% { opacity: 1; transform: scale(1) rotate(180deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-pattern"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Excel VLOOKUP Magic ✨</h1>
+            <p>Transform your spreadsheets with style!</p>
+        </div>
+
+        <div class="main-card">
+            <div id="messageDisplay" class="message-display"></div>
+
+            <form id="vlookupForm">
+                <div class="form-group">
+                    <label>📁 Upload Main Excel File</label>
+                    <div class="file-upload-area" id="mainFileArea">
+                        <div class="upload-icon">📊</div>
+                        <p><strong>Drop your Excel file here</strong> or click to browse</p>
+                        <p style="color: #64748b; margin-top: 0.5rem;">Supports .xlsx and .xls files</p>
+                        <input type="file" id="mainFile" class="file-input" accept=".xlsx,.xls" required>
+                    </div>
+                    <div id="mainFileInfo" class="file-info" style="display: none;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>📋 Upload Reference File (O.xlsx)</label>
+                    <div class="file-upload-area" id="refFileArea">
+                        <div class="upload-icon">🔍</div>
+                        <p><strong>Drop your reference file here</strong> or click to browse</p>
+                        <p style="color: #64748b; margin-top: 0.5rem;">This should be your O.xlsx lookup file</p>
+                        <input type="file" id="refFile" class="file-input" accept=".xlsx,.xls" required>
+                    </div>
+                    <div id="refFileInfo" class="file-info" style="display: none;"></div>
+                </div>
+
+                <div class="form-group" id="sheetSelector" style="display: none;">
+                    <label>📋 Choose Worksheet</label>
+                    <div class="sheet-selector">
+                        <div class="sheet-option" data-sheet="UPPAbaby Order Form">
+                            <h3>🍼 UPPAbaby</h3>
+                            <p>Baby products sheet</p>
+                        </div>
+                        <div class="sheet-option" data-sheet="4Moms">
+                            <h3>👶 4Moms</h3>
+                            <p>4Moms products sheet</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" id="lastRowGroup" style="display: none;">
+                    <label>📏 Enter Last Row Number</label>
+                    <input type="number" id="lastRow" class="input-field" placeholder="e.g., 100" min="1" required>
+                    <p style="color: #64748b; margin-top: 0.5rem; font-size: 0.9rem;">
+                        Enter the last row number you want to process in the selected sheet
+                    </p>
+                </div>
+
+                <button type="submit" id="processBtn" class="process-btn" disabled>
+                    🚀 Process VLOOKUP Magic
+                </button>
+            </form>
+
+            <div id="resultArea" style="display: none;"></div>
+        </div>
+
+        <!-- Footer with credit -->
+        <div style="text-align: center; margin-top: 2rem; padding: 1rem;">
+            <p style="color: rgba(255,255,255,0.9); font-size: 1rem; font-weight: 500;">
+                Made with ❤️ by <span style="font-weight: bold; color: #e94560;">ChinkMink</span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Encouraging messages array
+        const messages = [
+            "Hey prettyyyy!",
+            "Hi beautiful!",
+            "Hi girl! Don't forget the awesome creator :)",
+            "You're doing great!",
+            "Hello Shreya ki choti behen!",
+            "Hello Sushan ki badi behen!",
+            "Hello Minky ki badi behen!",
+            "Hello Chinky ki badi behen!",
+            "Ah! The infamous middle child!",
+            "Hey, you dropped something..... Your brain :)",
+            "This girl is on Fire!!!",
+            "Stop being lazy.. Focusss!!",
+            "Ni main tere naalo Sohna koi vi vekhya na!",
+            "Tenu takeya bina nai dil rajda, mohalle vicho kooch na karin..",
+            "Tu mile, dil khile, aur jeene ko kya chahiye..",
+            "Haye ni meri motto!",
+            "Chaand sifarish jo karta tumhari!",
+            "Makhan chor Krishan Kanhaiyya...",
+            "Good Morning beauty, luking bery good bery naaaiice!",
+            "Aankhein ladi bado badi, mauka mile kadi kadi..",
+            "Aisa dekha nhi, khoobsurat koi!",
+            "Radha Soami ji Anannya!"
+        ];
+
+        // State variables
+        let mainWorkbook = null;
+        let refWorkbook = null;
+        let selectedSheet = null;
+
+        // Display random message on load
+        function displayRandomMessage() {
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            document.getElementById('messageDisplay').textContent = randomMessage;
+            createSparkles();
+        }
+
+        // Create sparkle animation
+        function createSparkles() {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    sparkle.innerHTML = '✨';
+                    sparkle.style.left = Math.random() * 100 + '%';
+                    sparkle.style.top = Math.random() * 100 + '%';
+                    document.querySelector('.message-display').appendChild(sparkle);
+                    
+                    setTimeout(() => sparkle.remove(), 2000);
+                }, i * 200);
+            }
+        }
+
+        // File upload handlers
+        function setupFileUpload(inputId, areaId, infoId, callback) {
+            const input = document.getElementById(inputId);
+            const area = document.getElementById(areaId);
+            const info = document.getElementById(infoId);
+
+            // Click to upload
+            area.addEventListener('click', () => input.click());
+
+            // Drag and drop
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                area.classList.add('dragover');
+            });
+
+            area.addEventListener('dragleave', () => {
+                area.classList.remove('dragover');
+            });
+
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    input.files = files;
+                    handleFileUpload(files[0], info, callback);
+                }
+            });
+
+            input.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileUpload(e.target.files[0], info, callback);
+                }
+            });
+        }
+
+        // Handle file upload
+        function handleFileUpload(file, infoElement, callback) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                    callback(workbook);
+                    
+                    // Show file info
+                    infoElement.innerHTML = `
+                        <strong>📁 ${file.name}</strong><br>
+                        📊 Sheets: ${workbook.SheetNames.join(', ')}<br>
+                        📦 Size: ${(file.size / 1024).toFixed(1)} KB
+                    `;
+                    infoElement.style.display = 'block';
+                    
+                    checkFormCompletion();
+                } catch (error) {
+                    alert('Error reading file: ' + error.message);
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        // Sheet selection handler
+        function setupSheetSelection() {
+            document.querySelectorAll('.sheet-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    document.querySelectorAll('.sheet-option').forEach(opt => 
+                        opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    selectedSheet = option.dataset.sheet;
+                    checkFormCompletion();
+                });
+            });
+        }
+
+        // Check if form is complete
+        function checkFormCompletion() {
+            const hasMainFile = mainWorkbook !== null;
+            const hasRefFile = refWorkbook !== null;
+            const hasSelectedSheet = selectedSheet !== null;
+            const lastRowInput = document.getElementById('lastRow');
+            const hasLastRow = lastRowInput.value.trim() !== '';
+
+            // Show sheet selector if main file is loaded
+            if (hasMainFile) {
+                document.getElementById('sheetSelector').style.display = 'block';
+            }
+
+            // Show last row input if sheet is selected
+            if (hasSelectedSheet) {
+                document.getElementById('lastRowGroup').style.display = 'block';
+            }
+
+            // Enable submit button if all required fields are filled
+            const submitBtn = document.getElementById('processBtn');
+            if (hasMainFile && hasRefFile && hasSelectedSheet && hasLastRow) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '🚀 Process VLOOKUP Magic';
+            } else {
+                submitBtn.disabled = true;
+            }
+        }
+
+        // Process VLOOKUP
+        function processVLOOKUP() {
+            const lastRow = parseInt(document.getElementById('lastRow').value);
+            
+            try {
+                // Get the selected worksheet
+                const worksheet = mainWorkbook.Sheets[selectedSheet];
+                if (!worksheet) {
+                    throw new Error(`Sheet "${selectedSheet}" not found in main file`);
+                }
+
+                // Get reference data for lookup
+                const refSheet = refWorkbook.Sheets[refWorkbook.SheetNames[0]];
+                
+                // Convert reference sheet to array format for easier processing
+                const refRange = XLSX.utils.decode_range(refSheet['!ref']);
+                const refData = [];
+                
+                // Read reference data manually to handle any format issues
+                for (let row = refRange.s.r; row <= refRange.e.r; row++) {
+                    const cellA = refSheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Column A
+                    const cellB = refSheet[XLSX.utils.encode_cell({r: row, c: 1})]; // Column B
+                    
+                    if (cellA && cellB) {
+                        refData.push([
+                            cellA.v || cellA.w || '', 
+                            cellB.v || cellB.w || ''
+                        ]);
+                    }
+                }
+
+                // Create lookup map for faster processing
+                const lookupMap = {};
+                for (let i = 1; i < refData.length; i++) { // Skip header row (index 0)
+                    if (refData[i][0] && refData[i][1]) {
+                        lookupMap[refData[i][0]] = refData[i][1];
+                    }
+                }
+
+                console.log('Lookup map created:', lookupMap);
+                console.log('Processing rows 2 to', lastRow);
+
+                // Process rows - Add actual VALUES instead of formulas to preserve formatting
+                let processedCount = 0;
+                for (let row = 2; row <= lastRow; row++) { // Start from row 2 (skip header)
+                    const lookupCellAddress = `A${row}`;
+                    const resultCellAddress = `G${row}`;
+                    
+                    // Get the lookup value from column A
+                    const lookupCell = worksheet[lookupCellAddress];
+                    if (lookupCell && (lookupCell.v !== undefined || lookupCell.w !== undefined)) {
+                        const lookupValue = lookupCell.v || lookupCell.w;
+                        const foundValue = lookupMap[lookupValue];
+                        
+                        console.log(`Row ${row}: Looking up "${lookupValue}" -> Found: "${foundValue}"`);
+                        
+                        if (foundValue !== undefined) {
+                            // Create or update cell G with the looked up VALUE
+                            if (!worksheet[resultCellAddress]) {
+                                worksheet[resultCellAddress] = {};
+                            }
+                            worksheet[resultCellAddress].v = foundValue;
+                            worksheet[resultCellAddress].t = typeof foundValue === 'number' ? 'n' : 's';
+                            processedCount++;
+                        }
+                    }
+                }
+
+                console.log('Processing completed. Found values for', processedCount, 'rows');
+
+                // Create new workbook with preserved formatting
+                const newWorkbook = XLSX.utils.book_new();
+                
+                // Copy all sheets with their original properties
+                Object.keys(mainWorkbook.Sheets).forEach(sheetName => {
+                    const originalSheet = mainWorkbook.Sheets[sheetName];
+                    const newSheet = {};
+                    
+                    // Copy all cells and their properties
+                    Object.keys(originalSheet).forEach(cellAddress => {
+                        if (cellAddress !== '!ref') {
+                            newSheet[cellAddress] = { ...originalSheet[cellAddress] };
+                        }
+                    });
+                    
+                    // Copy sheet range
+                    if (originalSheet['!ref']) {
+                        newSheet['!ref'] = originalSheet['!ref'];
+                    }
+                    
+                    XLSX.utils.book_append_sheet(newWorkbook, newSheet, sheetName);
+                });
+
+                // Generate download
+                const wbout = XLSX.write(newWorkbook, { 
+                    bookType: 'xlsx', 
+                    type: 'array'
+                });
+                const blob = new Blob([wbout], { 
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                });
+                const url = URL.createObjectURL(blob);
+
+                // Show result with more details
+                const resultArea = document.getElementById('resultArea');
+                resultArea.innerHTML = `
+                    <h3>✅ VLOOKUP Processing Complete!</h3>
+                    <p>Your Excel file has been processed with lookup values added to column G.</p>
+                    <p><strong>Processed rows:</strong> 2 to ${lastRow}</p>
+                    <p><strong>Values found:</strong> ${processedCount} out of ${lastRow - 1} rows</p>
+                    <p><strong>Sheet:</strong> ${selectedSheet}</p>
+                    <div style="margin-top: 1.5rem;">
+                        <a href="${url}" download="processed_${selectedSheet}_with_lookup.xlsx" class="download-btn">
+                            💾 Download Enhanced File
+                        </a>
+                    </div>
+                `;
+                resultArea.style.display = 'block';
+
+                // Show success message
+                displayRandomMessage();
+
+            } catch (error) {
+                console.error('Detailed error:', error);
+                alert('Error processing VLOOKUP: ' + error.message);
+            }
+        }
+
+        // Form submission handler
+        document.getElementById('vlookupForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('processBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading-spinner"></span>Processing...';
+
+            setTimeout(() => {
+                try {
+                    processVLOOKUP();
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '🚀 Process VLOOKUP Magic';
+                }
+            }, 1000);
+        });
+
+        // Last row input handler
+        document.getElementById('lastRow').addEventListener('input', checkFormCompletion);
+
+        // Initialize
+        displayRandomMessage();
+        setupFileUpload('mainFile', 'mainFileArea', 'mainFileInfo', (workbook) => {
+            mainWorkbook = workbook;
+        });
+        setupFileUpload('refFile', 'refFileArea', 'refFileInfo', (workbook) => {
+            refWorkbook = workbook;
+        });
+        setupSheetSelection();
+    </script>
+</body>
+</html>
